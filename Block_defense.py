@@ -27,6 +27,12 @@ towers_info = {
         "description": "Powerful bullets but slower and also makes money."
     }
 }
+def show_tooltip(name, description, mouse_pos):
+    tooltip_text = f"{name}: {description}"
+    tooltip_surface = font.render(tooltip_text, True, (255, 255, 255))
+    tooltip_rect = tooltip_surface.get_rect(topleft=(mouse_pos[0] + 10, mouse_pos[1] + 10))
+    pygame.draw.rect(screen, (0, 0, 0), tooltip_rect.inflate(6, 6))
+    screen.blit(tooltip_surface, tooltip_rect)
 
 
 # === Block Classes ===
@@ -461,13 +467,6 @@ def reset_game():
 
     dragging_tower = dragging_money = dragging_fusion1 = dragging_fusion2 = dragging_Posion = False
 
-def show_tooltip(name, description, mouse_pos):
-    tooltip_text = f"{name}: {description}"
-    tooltip_surface = font.render(tooltip_text, True, (255, 255, 255))
-    tooltip_rect = tooltip_surface.get_rect(topleft=(mouse_pos[0] + 10, mouse_pos[1] + 10))
-    pygame.draw.rect(screen, (0, 0, 0), tooltip_rect.inflate(6, 6))
-    screen.blit(tooltip_surface, tooltip_rect)
-
 
 
 
@@ -517,10 +516,6 @@ money_icon_rect = pygame.Rect(menu_panel.x + 100, menu_panel.y + 50, 40, 40)
 fusion1_icon_rect = pygame.Rect(menu_panel.x + 50, menu_panel.y + 100, 40, 40)
 fusion2_icon_rect = pygame.Rect(menu_panel.x + 100, menu_panel.y + 100, 40, 40)
 
-mouse_pos = pygame.mouse.get_pos()
-for tower_name, tower_data in towers_info.items():
-    if tower_data["rect"].collidepoint(mouse_pos):
-        show_tooltip(tower_name, tower_data["description"], mouse_pos)
 
 # === Game Loop ===
 while True:
@@ -626,11 +621,11 @@ while True:
         if pygame.key.get_pressed()[pygame.K_ESCAPE]:
             running = False
 
-        for tower_key, tower_data in towers_info.items():
-            if tower_data['rect'].collidepoint(mouse_pos):
-                # Display tooltip
-                show_tooltip(tower_data['name'], tower_data['description'], mouse_pos)
-                break  # Only show one tooltip at a time
+        mouse_pos = pygame.mouse.get_pos()
+        for tower_name, tower_data in towers_info.items():
+            if tower_data["rect"].collidepoint(mouse_pos):
+                show_tooltip(tower_name, tower_data["description"], mouse_pos)
+
 
         # === DRAW ===
         screen.fill((255, 255, 255))
