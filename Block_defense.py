@@ -14,18 +14,20 @@ pygame.display.set_caption("Block_defense")
 
 #Hover over the blocks to see what they do
 towers_info = {
-    'basic_tower': {
-        'rect: basic_tower_rect',
-        'name: Basic Tower',
-        'description Shoots bullets at enemies.'
+    "Rect": {
+        "rect": pygame.Rect(750, 100, 50, 50),
+        "description": "Basic tower. Shoots bullets at enemies."
     },
-    'fusion_tower': {
-        'rect: fusion_tower_rect',
-        'name: Fusion Tower',
-        'description: Generates money and fires bullets.'
+    "fusion1": {
+        "rect": pygame.Rect(750, 160, 50, 50),
+        "description": "Fast shooting tower."
     },
-    # Add more towers as needed
+    "fusion2": {
+        "rect": pygame.Rect(750, 220, 50, 50),
+        "description": "Powerful bullets but slower and also makes money."
+    }
 }
+
 
 # === Block Classes ===
 class Block:
@@ -469,6 +471,7 @@ def show_tooltip(name, description, mouse_pos):
 
 
 
+
 # === Menu ===
 class Menu:
     def __init__(self, x, y, color, width, height):
@@ -515,6 +518,9 @@ fusion1_icon_rect = pygame.Rect(menu_panel.x + 50, menu_panel.y + 100, 40, 40)
 fusion2_icon_rect = pygame.Rect(menu_panel.x + 100, menu_panel.y + 100, 40, 40)
 
 mouse_pos = pygame.mouse.get_pos()
+for tower_name, tower_data in towers_info.items():
+    if tower_data["rect"].collidepoint(mouse_pos):
+        show_tooltip(tower_name, tower_data["description"], mouse_pos)
 
 # === Game Loop ===
 while True:
