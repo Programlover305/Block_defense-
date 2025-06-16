@@ -253,7 +253,7 @@ class Bullet:
 
 
 class BoosterTower:
-    def __init__(self, x, y):
+    def __init__(self, x, y, color, size):
         self.name = "booster"
         self.x = x
         self.y = y
@@ -278,6 +278,9 @@ class BoosterTower:
                 if dist <= self.range:
                     tower.damage = int(tower.damage * 1.2)
         self.boost_applied = True
+
+    def render(self):
+        pygame.draw.rect(screen, self.color, (self.x, self.y, self.size, self.size))
 
 
 #The fusion class
@@ -629,7 +632,7 @@ while True:
                 # Avoid overlap with all existing towers (including fused towers)
                 all_existing_towers = (
                     placed_towers + placed_money_towers + placed_fusion1 +
-                    placed_fusion2 + made_fusion
+                    placed_fusion2 + made_fusion + placed_BoosterTower
                 )
                 for turret in all_existing_towers:
                     existing_rect = pygame.Rect(turret.x - turret.size // 2, turret.y - turret.size // 2, turret.size, turret.size)
@@ -642,18 +645,15 @@ while True:
                     placed_towers.append(Rect(x, y, (255, 0, 0), 40))
                     Gold -= 3
 
-                elif dragging_money and Gold >= 10 and valid_placement and x < menu_panel.x:
+                elif dragging_money and Gold >= 7 and valid_placement and x < menu_panel.x:
                     placed_money_towers.append(money_maker(x, y, (255, 215, 0), 40))
-                    Gold -= 10
+                    Gold -= 7
 
                 
-                elif BoosterTower_icon_rect.collidepoint(event.pos) and gold >= 15:
-                    new_tower = BoosterTower(mouse_x, mouse_y)
-                    towers.append(new_tower)
-                    gold -= 15
-
-                
-
+                elif dragging_BoosterTower and Gold >= 1 and valid_placement and x < menu_panel.x:
+                    placed_BoosterTower.append(BoosterTower(x, y, (0, 0, 255), 40))
+                    Gold -= 1
+                    
                 elif dragging_fusion1 and Gold >= 12 and x < menu_panel.x:
                     fusion_rect = pygame.Rect(x - 20, y - 20, 40, 40)
                     fusion2_found = None
@@ -712,13 +712,14 @@ while True:
         screen.blit(gold_text, gold_rect)
 
         # === DRAGGING PREVIEW ===
-        if dragging_tower or dragging_money or dragging_fusion1 or dragging_fusion2:
+        if dragging_tower or dragging_money or dragging_fusion1 or dragging_fusion2 or dragging_BoosterTower:
             mx, my = pygame.mouse.get_pos()
             color = (255, 0, 0) if dragging_tower else \
                     (255, 215, 0) if dragging_money else \
                     (255, 100, 50) if dragging_fusion1 else \
                     (50, 100, 50) if dragging_fusion2 else \
-                    (0, 225, 0)
+                    (0, 0, 255) if dragging_BoosterTower else \
+                    (0, 0, 255)
             pygame.draw.rect(screen, color, (mx - 20, my - 20, 40, 40))
 
         # === SPAWN ENEMIES ===
@@ -756,7 +757,8 @@ while True:
             (placed_towers, 1, 1),
             (placed_fusion1, 1, 2),
             (placed_fusion2, 3, 1),
-            (made_fusion, 5, 3)
+            (made_fusion, 5, 3),
+            (placed_BoosterTower, 0, 0)
         ]
 
         # === TOWER FIRING ===
@@ -764,7 +766,7 @@ while True:
             for turret in turrets:
                 for target, _, _ in targets:
                     turret.render(target)
-
+                    
                 for target, _, _ in targets:
                     if target and current_time - turret.last_fire_time > turret.fire_interval:
                         if getattr(turret, "is_poison", False):
