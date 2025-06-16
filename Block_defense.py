@@ -257,12 +257,17 @@ class BoosterTower:
         self.name = "booster"
         self.x = x
         self.y = y
+        self.size = size
         self.range = 100
         self.boost_applied = False
         self.damage = 0  # Booster itself doesn't shoot
         self.image = pygame.Surface((40, 40))
         self.image.fill((0, 255, 255))  # Cyan color
         self.rect = self.image.get_rect(center=(self.x, self.y))
+        self.bullets = []
+        self.last_fire_time = 0
+        self.fire_interval = 1000
+        
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
@@ -279,8 +284,8 @@ class BoosterTower:
                     tower.damage = int(tower.damage * 1.2)
         self.boost_applied = True
 
-    def render(self):
-        pygame.draw.rect(screen, self.color, (self.x, self.y, self.size, self.size))
+    def render(self, target=None):# Accepts optional 'target' like other towers
+        screen.blit(self.image, (self.x, self.y))
 
 
 #The fusion class
@@ -764,8 +769,11 @@ while True:
         # === TOWER FIRING ===
         for turrets, multiplier, block_d in all_turret_groups:
             for turret in turrets:
+                if isinstance(turret, BoosterTower):
+                    continue
                 for target, _, _ in targets:
                     turret.render(target)
+                    
                     
                 for target, _, _ in targets:
                     if target and current_time - turret.last_fire_time > turret.fire_interval:
