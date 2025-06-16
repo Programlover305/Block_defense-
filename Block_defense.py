@@ -466,6 +466,34 @@ class fused:
             Gold += 7
             self.last_money_time = current_time
 
+class BoosterTower:
+    def __init__(self, x, y):
+        self.name = "booster"
+        self.x = x
+        self.y = y
+        self.range = 100
+        self.boost_applied = False
+        self.image = pygame.Surface((40, 40))
+        self.image.fill((0, 255, 255))  # Cyan color
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+
+    def draw(self, surface):
+        surface.blit(self.image, self.rect)
+        #draw range
+        pygame.draw.circle(surface, (0, 255, 255), (self.x, self.y), self.range, 1)
+
+    def apply_boost(self, towers):
+        if self.boost_applied:
+            return
+        for tower in towers:
+            if tower is not self and hasattr(tower, 'damage'):
+                dist = ((self.x - tower.x) ** 2 + (self.y - tower.y) ** 2) ** 0.5
+                if dist <= self.range:
+                    tower.damage = int(tower.damage * 1.2)
+        self.boost_applied = True
+
+
+
 #Reset the game
 def reset_game():
     global Gold, placed_towers, placed_money_towers, placed_fusion1, placed_fusion2, made_fusion
@@ -482,6 +510,7 @@ def reset_game():
     placed_fusion1 = []
     placed_fusion2 = []
     made_fusion = []
+    placed_BoosterTower = []
 
     blocks = []
     blocks2 = []
@@ -504,11 +533,13 @@ class Menu:
         self.height = height
 
     def render(self):
+        #Show the icons
         pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
         pygame.draw.rect(screen, (255, 0, 0), (self.x + 50, self.y + 50, 40, 40))  # tower icon
         pygame.draw.rect(screen, (255, 215, 0), (self.x + 100, self.y + 50, 40, 40))  # money icon
         pygame.draw.rect(screen, (255, 100, 50), (self.x + 50, self.y + 100, 40, 40))  # fusion1 icon
         pygame.draw.rect(screen, (50, 100, 50), (self.x + 100, self.y + 100, 40, 40))  # fusion2 icon
+        pygame.draw.rect(screen, (0, 0, 255), (self.x + 50, self.y + 150, 40, 40))  # Boostertower icon
 
 # === Game Setup ===
 path = [(0, 50), (450, 50), (450, 450), (0, 450)]
@@ -523,21 +554,25 @@ blocks4 = []
 spawn_time_1 = spawn_time_2 = spawn_time_3 = spawn_time_4 = pygame.time.get_ticks()
 
 player_base_health = 10
-Gold = 50
+Gold = 10
 dragging_tower = False
 dragging_money = False
 dragging_fusion1 = False
 dragging_fusion2 = False
+dragging_BoosterTower = False
 placed_towers = []
 placed_money_towers = []
 placed_fusion1 = []
 placed_fusion2 = []
 made_fusion = []
+placed_BoosterTower = []
 
+#Icon hitbox
 tower_icon_rect = pygame.Rect(menu_panel.x + 50, menu_panel.y + 50, 40, 40)
 money_icon_rect = pygame.Rect(menu_panel.x + 100, menu_panel.y + 50, 40, 40)
 fusion1_icon_rect = pygame.Rect(menu_panel.x + 50, menu_panel.y + 100, 40, 40)
 fusion2_icon_rect = pygame.Rect(menu_panel.x + 100, menu_panel.y + 100, 40, 40)
+BoosterTower_icon_rect = pygame.Rect(menu_panel.x + 50, menu_panel.y + 150, 40, 40)
 
 
 # === Game Loop ===
@@ -549,7 +584,7 @@ while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-
+            #What happens when you click on the icons
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if tower_icon_rect.collidepoint(event.pos):
                     dragging_tower = True
@@ -559,6 +594,8 @@ while True:
                     dragging_fusion1 = True
                 elif fusion2_icon_rect.collidepoint(event.pos):
                     dragging_fusion2 = True
+                elif BoosterTower_icon_rect.collidepoint(event.pos):
+                    dragging_BoosterTower = True
                 else:
                     for block2 in blocks2[:]:
                         if block2.get_hitbox().collidepoint(event.pos):
@@ -604,6 +641,9 @@ while True:
                     placed_money_towers.append(money_maker(x, y, (255, 215, 0), 40))
                     Gold -= 10
 
+                elif dragging_BoosterTower and Gold >= 15 and valid_placement and x <menu_panel.x:
+                    placed_BoosterTower.append(BoosterTower(x, y, (0, 0, 255), 40))
+                    Gold -= 15
                 
 
                 elif dragging_fusion1 and Gold >= 12 and x < menu_panel.x:
@@ -791,7 +831,9 @@ while True:
         elif fusion1_icon_rect.collidepoint(mouse_pos):
             draw_tooltip(screen, "Fusion1 Tower: Shoots more powerful bullets. Can be combined with Fusion2. Cost: 12", mouse_pos, font)
         elif fusion2_icon_rect.collidepoint(mouse_pos):
-            draw_tooltip(screen, "Fusion2 Tower: Shoots slower but generates money over time. Can be combined with Fusion1. ost: 20", mouse_pos, font)
+            draw_tooltip(screen, "Fusion2 Tower: Shoots slower but generates money over time. Can be combined with Fusion1. Cost: 20", mouse_pos, font)
+        elif BoosterTower_icon_rect.collidepoint(mouse_pos):
+            draw_tooltip(screen, "Booster Tower: Can boosts towers around it by 20%. Cost: 15", mouse_pos, font)
 
 
         pygame.display.flip()
