@@ -27,16 +27,34 @@ towers_info = {
         "description": "Powerful bullets but slower and also makes money."
     }
 }
-def show_tooltip(name, description, mouse_pos):
-    tooltip_text = f"{name}: {description}"
-    tooltip_surface = font.render(tooltip_text, True, (255, 255, 255))
-    tooltip_rect = tooltip_surface.get_rect(topleft=(mouse_pos[0] + 10, mouse_pos[1] + 10))
-    pygame.draw.rect(screen, (0, 0, 0), tooltip_rect.inflate(6, 6))
-    screen.blit(tooltip_surface, tooltip_rect)
+def draw_tooltip(screen, text, pos, font):
+    # Render the text surface
+    tooltip_surface = font.render(text, True, (255, 255, 255))
+    
+    # Get size and create background rectangle slightly bigger than text
+    padding = 5
+    bg_rect = tooltip_surface.get_rect(topleft=(pos[0] + 10, pos[1] + 10))
+    bg_rect.inflate_ip(padding * 2, padding * 2)
+    
+    # Make sure tooltip doesn't go off the screen to the right or bottom
+    if bg_rect.right > screen.get_width():
+        bg_rect.right = screen.get_width() - 5
+    if bg_rect.bottom > screen.get_height():
+        bg_rect.bottom = screen.get_height() - 5
+    
+    # Draw a dark background rect with slight transparency
+    s = pygame.Surface((bg_rect.width, bg_rect.height), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 180))  # Black with alpha transparency
+    screen.blit(s, bg_rect.topleft)
+    
+    # Draw the text on top of the background
+    screen.blit(tooltip_surface, (bg_rect.left + padding, bg_rect.top + padding))
+
 
 
 # === Block Classes ===
 class Block:
+    #init for all block varibales
     def __init__(self, path, speed, color, size, health):
         self.path = path
         self.current_target = 0
@@ -50,7 +68,7 @@ class Block:
         self.poisoned = False
         self.poison_ticks = 0
         self.last_poison_time = 0
-
+    #Puts the block on screen
     def render(self):
         if self.alive:
             pygame.draw.rect(screen, self.color, (self.x, self.y, self.size, self.size))
@@ -62,14 +80,14 @@ class Block:
             health_ratio = self.health / self.max_health
             health_color = (int(255 * (1 - health_ratio)), int(255 * health_ratio), 0)
             pygame.draw.rect(screen, health_color, (bar_x, bar_y, bar_width * health_ratio, bar_height))
-
+    #Unused
     def apply_poison(self):
         self.poisoned = True
         self.poison_ticks = 100
         self.last_poison_time = pygame.time.get_ticks()
 
 
-
+    #Having it move
     def move(self):
         if not self.alive:
             return False
@@ -99,9 +117,11 @@ class Block:
 
         return False
 
+    #The hitbox
     def get_hitbox(self):
         return pygame.Rect(self.x, self.y, self.size, self.size)
 
+#Passing all of the block stuff to the other three
 class Block2(Block):
     pass
 
@@ -113,6 +133,7 @@ class Block_large(Block):
 
 # === Tower and Bullet ===
 class Rect:
+    #init all varibales
     def __init__(self, x, y, color, size):
         self.x = x
         self.y = y
@@ -122,6 +143,7 @@ class Rect:
         self.fire_interval = 2000
         self.last_fire_time = pygame.time.get_ticks()
 
+    #Showing the tower on screen
     def render(self, block=None):
         if block:
             dx = block.x - self.x
@@ -141,7 +163,7 @@ class Rect:
             pygame.draw.rect(screen, self.color, (self.x - self.size // 2,
                                                   self.y - self.size // 2,
                                                   self.size, self.size))
-
+    #Firing the bullet
     def fire_bullet(self, block):
         if block is None:
             return  # Don't fire if there's no target
@@ -152,6 +174,7 @@ class Rect:
         speed = 3
         self.bullets.append(Bullet(self.x, self.y, speed, (0, 0, 0), 10, angle))
 
+    #Updating every frame
     def update(self, current_time):
         global Gold
 
@@ -180,7 +203,7 @@ class Rect:
                         break
                 if hit:
                     break
-
+#This class makes money
 class money_maker:
     def __init__(self,x , y, color, size):
         self.x = x
@@ -198,7 +221,7 @@ class money_maker:
         if current_time - self.last_money_time > self.money_interval:
             Gold += 5
             self.last_money_time = current_time
-
+#The bullets
 class Bullet:
     def __init__(self, x, y, speed, color, size, angle):
         self.x = x
@@ -228,7 +251,7 @@ class Bullet:
     def hit_target(self):
         self.hit = True
 
-
+#The fusion class
 class fusion1:
     def __init__(self, x, y, color, size):
         self.x = x
@@ -365,7 +388,7 @@ class fusion2:
                         break
                 if hit:
                     break
-                    
+#What happens when you fuse the two fusion towers two gather                   
 class fused:
     def __init__(self, x, y, color, size):
         self.x = x
@@ -443,7 +466,7 @@ class fused:
             Gold += 7
             self.last_money_time = current_time
 
-
+#Reset the game
 def reset_game():
     global Gold, placed_towers, placed_money_towers, placed_fusion1, placed_fusion2, made_fusion
     global blocks, blocks2, blocks3, blocks4
@@ -621,10 +644,8 @@ while True:
         if pygame.key.get_pressed()[pygame.K_ESCAPE]:
             running = False
 
-        mouse_pos = pygame.mouse.get_pos()
-        for tower_name, tower_data in towers_info.items():
-            if tower_data["rect"].collidepoint(mouse_pos):
-                show_tooltip(tower_name, tower_data["description"], mouse_pos)
+        
+
 
 
         # === DRAW ===
@@ -760,6 +781,18 @@ while True:
                                 pygame.quit()
                                 sys.exit()
                 break  # exit current game loop
+
+        mouse_pos = pygame.mouse.get_pos()
+
+        if tower_icon_rect.collidepoint(mouse_pos):
+            draw_tooltip(screen, "Basic Tower: Shoots at enemies. Cost:3", mouse_pos, font)
+        elif money_icon_rect.collidepoint(mouse_pos):
+            draw_tooltip(screen, "Money Tower: Generates gold over time. Cost: 7", mouse_pos, font)
+        elif fusion1_icon_rect.collidepoint(mouse_pos):
+            draw_tooltip(screen, "Fusion1 Tower: Shoots more powerful bullets. Can be combined with Fusion2. Cost: 12", mouse_pos, font)
+        elif fusion2_icon_rect.collidepoint(mouse_pos):
+            draw_tooltip(screen, "Fusion2 Tower: Shoots slower but generates money over time. Can be combined with Fusion1. ost: 20", mouse_pos, font)
+
 
         pygame.display.flip()
         clock.tick(60)
