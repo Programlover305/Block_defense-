@@ -251,6 +251,35 @@ class Bullet:
     def hit_target(self):
         self.hit = True
 
+
+class BoosterTower:
+    def __init__(self, x, y):
+        self.name = "booster"
+        self.x = x
+        self.y = y
+        self.range = 100
+        self.boost_applied = False
+        self.damage = 0  # Booster itself doesn't shoot
+        self.image = pygame.Surface((40, 40))
+        self.image.fill((0, 255, 255))  # Cyan color
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+
+    def draw(self, surface):
+        surface.blit(self.image, self.rect)
+        # Optional: draw range circle
+        pygame.draw.circle(surface, (0, 255, 255), (self.x, self.y), self.range, 1)
+
+    def apply_boost(self, towers):
+        if self.boost_applied:
+            return
+        for tower in towers:
+            if tower is not self and hasattr(tower, 'damage') and tower.damage > 0:
+                dist = ((self.x - tower.x) ** 2 + (self.y - tower.y) ** 2) ** 0.5
+                if dist <= self.range:
+                    tower.damage = int(tower.damage * 1.2)
+        self.boost_applied = True
+
+
 #The fusion class
 class fusion1:
     def __init__(self, x, y, color, size):
@@ -466,31 +495,6 @@ class fused:
             Gold += 7
             self.last_money_time = current_time
 
-class BoosterTower:
-    def __init__(self, x, y):
-        self.name = "booster"
-        self.x = x
-        self.y = y
-        self.range = 100
-        self.boost_applied = False
-        self.image = pygame.Surface((40, 40))
-        self.image.fill((0, 255, 255))  # Cyan color
-        self.rect = self.image.get_rect(center=(self.x, self.y))
-
-    def draw(self, surface):
-        surface.blit(self.image, self.rect)
-        #draw range
-        pygame.draw.circle(surface, (0, 255, 255), (self.x, self.y), self.range, 1)
-
-    def apply_boost(self, towers):
-        if self.boost_applied:
-            return
-        for tower in towers:
-            if tower is not self and hasattr(tower, 'damage'):
-                dist = ((self.x - tower.x) ** 2 + (self.y - tower.y) ** 2) ** 0.5
-                if dist <= self.range:
-                    tower.damage = int(tower.damage * 1.2)
-        self.boost_applied = True
 
 
 
@@ -566,6 +570,7 @@ placed_fusion1 = []
 placed_fusion2 = []
 made_fusion = []
 placed_BoosterTower = []
+towers = []
 
 #Icon hitbox
 tower_icon_rect = pygame.Rect(menu_panel.x + 50, menu_panel.y + 50, 40, 40)
@@ -641,9 +646,12 @@ while True:
                     placed_money_towers.append(money_maker(x, y, (255, 215, 0), 40))
                     Gold -= 10
 
-                elif dragging_BoosterTower and Gold >= 15 and valid_placement and x <menu_panel.x:
-                    placed_BoosterTower.append(BoosterTower(x, y, (0, 0, 255), 40))
-                    Gold -= 15
+                
+                elif BoosterTower_icon_rect.collidepoint(event.pos) and gold >= 15:
+                    new_tower = BoosterTower(mouse_x, mouse_y)
+                    towers.append(new_tower)
+                    gold -= 15
+
                 
 
                 elif dragging_fusion1 and Gold >= 12 and x < menu_panel.x:
@@ -790,6 +798,12 @@ while True:
         for n in made_fusion:
             n.render()
             n.update_money(current_time)
+
+        # === Boosting ===
+        for tower in towers:
+            if isinstance(tower, BoosterTower):
+                tower.apply_boost(towers)
+
 
 
         # === BASE HEALTH BAR ===
