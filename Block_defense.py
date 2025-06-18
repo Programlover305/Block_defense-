@@ -1,10 +1,12 @@
-#!C:\\Users\\adame\\AppData\\Local\\Programs\\Python\\Python312
 import pygame
 import math
 import sys
+from pathlib import Path
 
 pygame.init()
 font = pygame.font.SysFont(None, 30)
+
+game_dir = Path(__file__).parent
 
 # Screen setup
 screen = pygame.display.set_mode((900, 700))
@@ -284,8 +286,10 @@ class BoosterTower:
                     tower.damage = int(tower.damage * 1.2)
         self.boost_applied = True
 
-    def render(self, target=None):# Accepts optional 'target' like other towers
-        screen.blit(self.image, (self.x, self.y))
+    def render(self, surface):
+        surface.blit(self.image, self.rect)
+        pygame.draw.circle(surface, self.color, (self.x, self.y), self.range, 1)
+
 
 
 #The fusion class
@@ -655,9 +659,9 @@ while True:
                     Gold -= 7
 
                 
-                elif dragging_BoosterTower and Gold >= 1 and valid_placement and x < menu_panel.x:
+                elif dragging_BoosterTower and Gold >= 15 and valid_placement and x < menu_panel.x:
                     placed_BoosterTower.append(BoosterTower(x, y, (0, 0, 255), 40))
-                    Gold -= 1
+                    Gold -= 15
                     
                 elif dragging_fusion1 and Gold >= 12 and x < menu_panel.x:
                     fusion_rect = pygame.Rect(x - 20, y - 20, 40, 40)
@@ -810,9 +814,9 @@ while True:
             n.update_money(current_time)
 
         # === Boosting ===
-        for tower in towers:
-            if isinstance(tower, BoosterTower):
-                tower.apply_boost(towers)
+        for booster in placed_BoosterTower:
+            booster.draw(screen)
+            booster.apply_boost(placed_towers + placed_fusion1 + placed_fusion2 + made_fusion)
 
 
 
