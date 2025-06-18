@@ -775,9 +775,9 @@ while True:
             for turret in turrets:
                 if isinstance(turret, BoosterTower):
                     continue
+                
                 for target, _, _ in targets:
                     turret.render(target)
-                    
                     
                 for target, _, _ in targets:
                     if target and current_time - turret.last_fire_time > turret.fire_interval:
@@ -787,28 +787,57 @@ while True:
                             turret.fire_bullet(target)
                         turret.last_fire_time = current_time
 
+                bullets_to_remove = []
+                Gold_to_add = 0  # to avoid modifying Gold inside loop if needed
+
                 for bullet in turret.bullets[:]:
                     bullet.move()
                     bullet.render(screen)
+                    
+                    hit_something = False
+                    
+                    # Check hit on enemies (targets)
                     for enemy in targets:
                         if bullet.hit_target(enemy):
                             enemy.take_damage(bullet.damage)
-                            turret.bullets.remove(bullet)
-                            break  # stop checking other enemies for this bullet
-                    for target, block_group, gold_reward in targets:
-                        for block in block_group:
-                            if block.alive:
-                                bullet_rect = pygame.Rect(bullet.x - bullet.radius, bullet.y - bullet.radius, bullet.radius * 2, bullet.radius * 2)
-                                if bullet_rect.colliderect(block.get_hitbox()):
-                                    bullet.hit_target()
-                                    turret.bullets.remove(bullet)
-                                    block.health -= block_d
-                                    if getattr(bullet, "poison", False):
-                                        block.apply_poison()
-                                    if block.health <= 0:
-                                        block.alive = False
-                                        Gold += gold_reward * multiplier
-                                    break
+                            hit_something = True
+                            break  # bullet hit an enemy, stop checking
+                    
+                    # Check hit on blocks if bullet hasn't already hit enemy
+                    if not hit_something:
+                        for target, block_group, gold_reward in targets:
+                            for block in block_group:
+                                if block.alive:
+                                    bullet_rect = pygame.Rect(
+                                        bullet.x - bullet.radius,
+                                        bullet.y - bullet.radius,
+                                        bullet.radius * 2,
+                                        bullet.radius * 2,
+                                    )
+                                    if bullet_rect.colliderect(block.get_hitbox()):
+                                        bullet.hit_target()
+                                        block.health -= block_d
+                                        if getattr(bullet, "poison", False):
+                                            block.apply_poison()
+                                        if block.health <= 0:
+                                            block.alive = False
+                                            Gold_to_add += gold_reward * multiplier
+                                        hit_something = True
+                                        break
+                            if hit_something:
+                                break
+                    
+                    if hit_something:
+                        bullets_to_remove.append(bullet)
+
+                # Remove bullets only once after processing all collisions
+                for bullet in bullets_to_remove:
+                    if bullet in turret.bullets:
+                        turret.bullets.remove(bullet)
+
+                # Add gold after processing
+                Gold += Gold_to_add
+
 
         # === MONEY GENERATION ===
         for m in placed_money_towers:
