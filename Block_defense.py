@@ -140,6 +140,7 @@ class Rect:
         self.x = x
         self.y = y
         self.color = color
+        self.damage = damage
         self.size = size
         self.bullets = []
         self.fire_interval = 2000
@@ -174,7 +175,7 @@ class Rect:
         dy = block.y - self.y
         angle = math.atan2(dy, dx)
         speed = 3
-        self.bullets.append(Bullet(self.x, self.y, speed, (0, 0, 0), 10, angle))
+        self.bullets.append(Bullet(self.x, self.y, speed, (0, 0, 0), 10, angle, self.damage))
 
     #Updating every frame
     def update(self, current_time):
@@ -254,6 +255,7 @@ class Bullet:
 
     def hit_target(self):
         self.hit = True
+
 
 
 
@@ -563,7 +565,7 @@ class Menu:
 # === Game Setup ===
 path = [(0, 50), (450, 50), (450, 450), (0, 450)]
 
-rect = Rect(200, 200, (255, 0, 0), 40)
+rect = Rect(200, 200, (255, 0, 0), 40, 1)
 menu_panel = Menu(700, 0, (50, 50, 50), 200, 700)
 
 blocks = []
@@ -654,20 +656,20 @@ while True:
 
                 # === HANDLE TOWER PLACEMENT ===
                 if dragging_tower and Gold >= 3 and valid_placement and x < menu_panel.x:
-                    placed_towers.append(Rect(x, y, (255, 0, 0), 40))
+                    placed_towers.append(Rect(x, y, (255, 0, 0), 40, 1))
                     Gold -= 3
 
                 elif dragging_money and Gold >= 7 and valid_placement and x < menu_panel.x:
-                    placed_money_towers.append(money_maker(x, y, (255, 215, 0), 40))
+                    placed_money_towers.append(money_maker(x, y, (255, 215, 0), 40, 0))
                     Gold -= 7
 
                 
                 elif dragging_BoosterTower and Gold >= 1 and valid_placement and x < menu_panel.x:
-                    placed_BoosterTower.append(BoosterTower(x, y, (0, 0, 255), 40))
+                    placed_BoosterTower.append(BoosterTower(x, y, (0, 0, 255), 40, 0))
                     Gold -= 1
                     
                 elif dragging_fusion1 and Gold >= 12 and x < menu_panel.x:
-                    fusion_rect = pygame.Rect(x - 20, y - 20, 40, 40)
+                    fusion_rect = pygame.Rect(x - 20, y - 20, 40, 40, 2)
                     fusion2_found = None
                     for turret in placed_fusion2:
                         existing_rect = pygame.Rect(turret.x - turret.size // 2, turret.y - turret.size // 2, turret.size, turret.size)
@@ -683,7 +685,7 @@ while True:
                         Gold -= 12
 
                 elif dragging_fusion2 and Gold >= 20 and x < menu_panel.x:
-                    fusion_rect = pygame.Rect(x - 20, y - 20, 40, 40)
+                    fusion_rect = pygame.Rect(x - 20, y - 20, 40, 40, 1)
                     fusion1_found = None
                     for turret in placed_fusion1:
                         existing_rect = pygame.Rect(turret.x - turret.size // 2, turret.y - turret.size // 2, turret.size, turret.size)
@@ -799,7 +801,7 @@ while True:
                     hit_something = False
 
                     # Check enemy collisions
-                    for enemy in enemies:
+                    for enemy in targets:
                         if bullet.get_hitbox().colliderect(enemy.get_hitbox()):
                             enemy.take_damage(bullet.damage)
                             if bullet.poison:
@@ -832,6 +834,7 @@ while True:
                         turret.bullets.remove(bullet)
 
                 Gold += Gold_to_add
+
 
 
 
