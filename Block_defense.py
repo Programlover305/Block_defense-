@@ -142,6 +142,7 @@ class Rect:
         self.color = color
         self.damage = damage
         self.size = size
+        self.alive = True
         self.bullets = []
         self.fire_interval = 2000
         self.last_fire_time = pygame.time.get_ticks()
@@ -589,6 +590,7 @@ made_fusion = []
 placed_BoosterTower = []
 towers = []
 
+
 #Icon hitbox
 tower_icon_rect = pygame.Rect(menu_panel.x + 50, menu_panel.y + 50, 40, 40)
 money_icon_rect = pygame.Rect(menu_panel.x + 100, menu_panel.y + 50, 40, 40)
@@ -653,6 +655,10 @@ while True:
                     if tower_rect.colliderect(existing_rect):
                         valid_placement = False
                         break
+
+                for block in turrets:
+                    if block.alive:
+                        block.render(screen)
 
                 # === HANDLE TOWER PLACEMENT ===
                 if dragging_tower and Gold >= 3 and valid_placement and x < menu_panel.x:
