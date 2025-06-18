@@ -660,16 +660,16 @@ while True:
                     Gold -= 3
 
                 elif dragging_money and Gold >= 7 and valid_placement and x < menu_panel.x:
-                    placed_money_towers.append(money_maker(x, y, (255, 215, 0), 40, 0))
+                    placed_money_towers.append(money_maker(x, y, (255, 215, 0), 40))
                     Gold -= 7
 
                 
                 elif dragging_BoosterTower and Gold >= 1 and valid_placement and x < menu_panel.x:
-                    placed_BoosterTower.append(BoosterTower(x, y, (0, 0, 255), 40, 0))
+                    placed_BoosterTower.append(BoosterTower(x, y, (0, 0, 255), 40))
                     Gold -= 1
                     
                 elif dragging_fusion1 and Gold >= 12 and x < menu_panel.x:
-                    fusion_rect = pygame.Rect(x - 20, y - 20, 40, 40, 2)
+                    fusion_rect = pygame.Rect(x - 20, y - 20, 40, 40)
                     fusion2_found = None
                     for turret in placed_fusion2:
                         existing_rect = pygame.Rect(turret.x - turret.size // 2, turret.y - turret.size // 2, turret.size, turret.size)
@@ -685,7 +685,7 @@ while True:
                         Gold -= 12
 
                 elif dragging_fusion2 and Gold >= 20 and x < menu_panel.x:
-                    fusion_rect = pygame.Rect(x - 20, y - 20, 40, 40, 1)
+                    fusion_rect = pygame.Rect(x - 20, y - 20, 40, 40)
                     fusion1_found = None
                     for turret in placed_fusion1:
                         existing_rect = pygame.Rect(turret.x - turret.size // 2, turret.y - turret.size // 2, turret.size, turret.size)
@@ -781,59 +781,60 @@ while True:
                 if isinstance(turret, BoosterTower):
                     continue
 
-                for target, _, _ in targets:
-                    turret.render(target)
+                for target_tuple in targets:
+                    target = target_tuple[0]  # Assuming the target object is the first element in the tuple
+                    if Bullet.get_hitbox().colliderect(target.get_hitbox()):
 
-                for target, _, _ in targets:
-                    if target and current_time - turret.last_fire_time > turret.fire_interval:
-                        if getattr(turret, "is_poison", False):
-                            turret.fire_poison_bullet(target)
-                        else:
-                            turret.fire_bullet(target)
-                        turret.last_fire_time = current_time
+                        for target, _, _ in targets:
+                            if target and current_time - turret.last_fire_time > turret.fire_interval:
+                                if getattr(turret, "is_poison", False):
+                                    turret.fire_poison_bullet(target)
+                                else:
+                                    turret.fire_bullet(target)
+                                turret.last_fire_time = current_time
 
-                bullets_to_remove = []
-                Gold_to_add = 0
+                        bullets_to_remove = []
+                        Gold_to_add = 0
 
-                for bullet in turret.bullets[:]:
-                    bullet.move()
-                    bullet.render(screen)
-                    hit_something = False
+                        for bullet in turret.bullets[:]:
+                            bullet.move()
+                            bullet.render(screen)
+                            hit_something = False
 
-                    # Check enemy collisions
-                    for enemy in targets:
-                        if bullet.get_hitbox().colliderect(enemy.get_hitbox()):
-                            enemy.take_damage(bullet.damage)
-                            if bullet.poison:
-                                enemy.apply_poison()
-                            hit_something = True
-                            break
-
-                    # Check block collisions
-                    if not hit_something:
-                        for target, block_group, gold_reward in targets:
-                            for block in block_group:
-                                if block.alive and bullet.get_hitbox().colliderect(block.get_hitbox()):
-                                    bullet.hit_target()
-                                    block.health -= block_d
+                            # Check enemy collisions
+                            for enemy in targets:
+                                if bullet.get_hitbox().colliderect(enemy.get_hitbox()):
+                                    enemy.take_damage(bullet.damage)
                                     if bullet.poison:
-                                        block.apply_poison()
-                                    if block.health <= 0:
-                                        block.alive = False
-                                        Gold_to_add += gold_reward * multiplier
+                                        enemy.apply_poison()
                                     hit_something = True
                                     break
+
+                            # Check block collisions
+                            if not hit_something:
+                                for target, block_group, gold_reward in targets:
+                                    for block in block_group:
+                                        if block.alive and bullet.get_hitbox().colliderect(block.get_hitbox()):
+                                            bullet.hit_target()
+                                            block.health -= block_d
+                                            if bullet.poison:
+                                                block.apply_poison()
+                                            if block.health <= 0:
+                                                block.alive = False
+                                                Gold_to_add += gold_reward * multiplier
+                                            hit_something = True
+                                            break
+                                    if hit_something:
+                                        break
+
                             if hit_something:
-                                break
+                                bullets_to_remove.append(bullet)
 
-                    if hit_something:
-                        bullets_to_remove.append(bullet)
+                        for bullet in bullets_to_remove:
+                            if bullet in turret.bullets:
+                                turret.bullets.remove(bullet)
 
-                for bullet in bullets_to_remove:
-                    if bullet in turret.bullets:
-                        turret.bullets.remove(bullet)
-
-                Gold += Gold_to_add
+                        Gold += Gold_to_add
 
 
 
