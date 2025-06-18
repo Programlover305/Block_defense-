@@ -150,8 +150,8 @@ class Rect:
         self.last_fire_time = pygame.time.get_ticks()
 
     #Showing the tower on screen
-    def render(self, block=None):
-        if block:
+    def render(self, screen, block=None):
+        if block and self.alive == True:
             dx = block.x - self.x
             dy = block.y - self.y
             angle = math.atan2(dy, dx)
@@ -592,11 +592,9 @@ made_fusion = []
 placed_BoosterTower = []
 
 towers = []
-new_block = Rect(x, y, color, size, damage)
-new_block.alive = True
-block_group.append(new_block)
 
 
+block_group.append(Block)
 
 #Icon hitbox
 tower_icon_rect = pygame.Rect(menu_panel.x + 50, menu_panel.y + 50, 40, 40)
@@ -662,10 +660,10 @@ while True:
                     if tower_rect.colliderect(existing_rect):
                         valid_placement = False
                         break
-
+                
                 for block in block_group:
-                    if block.alive:
-                        block.render(screen)
+                    if Rect.alive:
+                        Rect.render(self)
 
                 # === HANDLE TOWER PLACEMENT ===
                 if dragging_tower and Gold >= 3 and valid_placement and x < menu_panel.x:
