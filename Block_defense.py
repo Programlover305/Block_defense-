@@ -659,9 +659,9 @@ while True:
                     Gold -= 7
 
                 
-                elif dragging_BoosterTower and Gold >= 15 and valid_placement and x < menu_panel.x:
+                elif dragging_BoosterTower and Gold >= 1 and valid_placement and x < menu_panel.x:
                     placed_BoosterTower.append(BoosterTower(x, y, (0, 0, 255), 40))
-                    Gold -= 15
+                    Gold -= 1
                     
                 elif dragging_fusion1 and Gold >= 12 and x < menu_panel.x:
                     fusion_rect = pygame.Rect(x - 20, y - 20, 40, 40)
@@ -790,6 +790,11 @@ while True:
                 for bullet in turret.bullets[:]:
                     bullet.move()
                     bullet.render(screen)
+                    for enemy in targets:
+                        if bullet.hit_target(enemy):
+                            enemy.take_damage(bullet.damage)
+                            turret.bullets.remove(bullet)
+                            break  # stop checking other enemies for this bullet
                     for target, block_group, gold_reward in targets:
                         for block in block_group:
                             if block.alive:
