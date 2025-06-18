@@ -8,6 +8,8 @@ font = pygame.font.SysFont(None, 30)
 
 game_dir = Path(__file__).parent
 
+block_group = []
+
 # Screen setup
 screen = pygame.display.set_mode((900, 700))
 clock = pygame.time.Clock()
@@ -588,7 +590,12 @@ placed_fusion1 = []
 placed_fusion2 = []
 made_fusion = []
 placed_BoosterTower = []
+
 towers = []
+new_block = Rect(x, y, color, size, damage)
+new_block.alive = True
+block_group.append(new_block)
+
 
 
 #Icon hitbox
@@ -656,7 +663,7 @@ while True:
                         valid_placement = False
                         break
 
-                for block in turrets:
+                for block in block_group:
                     if block.alive:
                         block.render(screen)
 
