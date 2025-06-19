@@ -661,14 +661,13 @@ while True:
                         valid_placement = False
                         break
                 
-                for block in block_group:
-                    if Rect.alive:
-                        Rect.render(self)
+                
 
                 # === HANDLE TOWER PLACEMENT ===
                 if dragging_tower and Gold >= 3 and valid_placement and x < menu_panel.x:
                     placed_towers.append(Rect(x, y, (255, 0, 0), 40, 1))
                     Gold -= 3
+
 
                 elif dragging_money and Gold >= 7 and valid_placement and x < menu_panel.x:
                     placed_money_towers.append(money_maker(x, y, (255, 215, 0), 40))
@@ -746,6 +745,7 @@ while True:
                     (0, 0, 255) if dragging_BoosterTower else \
                     (0, 0, 255)
             pygame.draw.rect(screen, color, (mx - 20, my - 20, 40, 40))
+
 
         # === SPAWN ENEMIES ===
         if current_time - spawn_time_1 > 5000:
@@ -864,6 +864,9 @@ while True:
         for booster in placed_BoosterTower:
             booster.draw(screen)
             booster.apply_boost(placed_towers + placed_fusion1 + placed_fusion2 + made_fusion)
+
+        for tower in placed_towers:
+            tower.render(screen)
 
 
 
