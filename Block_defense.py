@@ -58,82 +58,85 @@ def draw_tooltip(screen, text, pos, font):
 
 # === Block Classes ===
 class Block:
-    #init for all block varibales
-    def __init__(self, path, speed, color, size, health):
-        self.path = path
-        self.current_target = 0
-        self.x, self.y = self.path[self.current_target]
-        self.speed = speed
+    def __init__(self, path, color=(0, 255, 0), health=100, speed=1):
+        self.path = path  # list of (x, y) tuples for movement
         self.color = color
-        self.size = size
-        self.health = health
         self.max_health = health
+        self.health = health
+        self.speed = speed
         self.alive = True
         self.poisoned = False
-        self.poison_ticks = 0
-        self.last_poison_time = 0
-    #Puts the block on screen
-    def render(self):
-        if self.alive:
-            pygame.draw.rect(screen, self.color, (self.x, self.y, self.size, self.size))
-            bar_width = self.size
-            bar_height = 5
-            bar_x = self.x
-            bar_y = self.y - bar_height - 2
-            pygame.draw.rect(screen, (150, 150, 150), (bar_x, bar_y, bar_width, bar_height))
-            health_ratio = self.health / self.max_health
-            health_color = (int(255 * (1 - health_ratio)), int(255 * health_ratio), 0)
-            pygame.draw.rect(screen, health_color, (bar_x, bar_y, bar_width * health_ratio, bar_height))
-    #Unused
-    def apply_poison(self):
-        self.poisoned = True
-        self.poison_ticks = 100
-        self.last_poison_time = pygame.time.get_ticks()
+        self.poison_timer = 0
+        self.poison_duration = 0
+        self.current_point = 0
+        self.x, self.y = self.path[0]
+        self.size = 40  # block size
 
-
-    #Having it move
     def move(self):
-        if not self.alive:
-            return False
-        target_x, target_y = self.path[self.current_target]
-        dx, dy = target_x - self.x, target_y - self.y
-        distance = math.hypot(dx, dy)
-        if distance < self.speed:
-            self.x, self.y = target_x, target_y
-            if self.current_target < len(self.path) - 1:
-                self.current_target += 1
+        if self.current_point < len(self.path) - 1:
+            target_x, target_y = self.path[self.current_point + 1]
+            dx, dy = target_x - self.x, target_y - self.y
+            dist = (dx ** 2 + dy ** 2) ** 0.5
+            if dist < self.speed:
+                self.x, self.y = target_x, target_y
+                self.current_point += 1
             else:
-                self.alive = False
-                return True
+                self.x += self.speed * dx / dist
+                self.y += self.speed * dy / dist
         else:
-            self.x += self.speed * (dx / distance)
-            self.y += self.speed * (dy / distance)
-        return False
+            self.alive = False  # reached end
 
+    def take_damage(self, damage):
+        self.health -= damage
+        if self.health <= 0:
+            self.alive = False
+
+    def apply_poison(self, duration, damage_per_tick, tick_rate):
+        self.poisoned = True
+        self.poison_duration = duration
+        self.poison_timer = 0
+        self.poison_damage = damage_per_tick
+        self.poison_tick_rate = tick_rate
+        self.last_poison_tick = 0
+
+    def update_poison(self, current_time):
         if self.poisoned:
-            now = pygame.time.get_ticks()
-            if now - self.last_poison_time >= 1000:
-                self.health -= 1
-                self.poison_ticks -= 1
-                self.last_poison_time = now
-                if self.poison_ticks <= 0:
-                    self.poisoned = False
+            if current_time - self.last_poison_tick >= self.poison_tick_rate:
+                self.take_damage(self.poison_damage)
+                self.last_poison_tick = current_time
+            self.poison_timer += 1
+            if self.poison_timer > self.poison_duration:
+                self.poisoned = False
 
-        return False
+    def render(self, screen):
+        rect = pygame.Rect(self.x - self.size // 2, self.y - self.size // 2, self.size, self.size)
+        pygame.draw.rect(screen, self.color, rect)
 
-    #The hitbox
+        # Draw health bar
+        bar_width = self.size
+        bar_height = 5
+        health_ratio = max(self.health / self.max_health, 0)
+        health_bar = pygame.Rect(self.x - bar_width // 2, self.y - self.size // 2 - 10, bar_width * health_ratio, bar_height)
+        border = pygame.Rect(self.x - bar_width // 2, self.y - self.size // 2 - 10, bar_width, bar_height)
+        pygame.draw.rect(screen, (255, 0, 0), border)
+        pygame.draw.rect(screen, (0, 255, 0), health_bar)
+
     def get_hitbox(self):
         return pygame.Rect(self.x, self.y, self.size, self.size)
 
 #Passing all of the block stuff to the other three
 class Block2(Block):
-    pass
+    def __init__(self, path):
+        super().__init__(path, color=(255, 100, 0), health=120, speed=0.8)
 
 class Block_small(Block):
-    pass
+    def __init__(self, path):
+        super().__init__(path, color=(100, 200, 255), health=60, speed=1.5)
 
 class Block_large(Block):
-    pass
+    def __init__(self, path):
+        super().__init__(path, color=(120, 120, 120), health=200, speed=0.5)
+
 
 # === Tower and Bullet ===
 class Rect:
@@ -596,6 +599,21 @@ towers = []
 
 block_group.append(Block)
 
+tower_size = 40  # adjust to your tower size
+
+# blocks - black, same size as towers
+block_size = tower_size
+block_color = (0, 0, 0)
+
+# blocks4 - bigger than blocks, red
+block4_size = int(tower_size * 1.5)  # 50% bigger
+block4_color = (255, 0, 0)
+
+# blocks3 - smaller than blocks, blue
+block3_size = int(tower_size * 0.4)  # 40% size
+block3_color = (0, 0, 255)
+
+
 #Icon hitbox
 tower_icon_rect = pygame.Rect(menu_panel.x + 50, menu_panel.y + 50, 40, 40)
 money_icon_rect = pygame.Rect(menu_panel.x + 100, menu_panel.y + 50, 40, 40)
@@ -749,23 +767,46 @@ while True:
 
         # === SPAWN ENEMIES ===
         if current_time - spawn_time_1 > 5000:
-            blocks.append(Block(path, 0.4, (0, 0, 0), 25, 2))
+            block = Block(path)
+            block.color = block_color
+            block.health = 3
+            block.speed = 1
+            block.size = block_size
+            blocks3.append(block)
             spawn_time_1 = current_time
+
         if current_time - spawn_time_2 > 10000:
-            blocks4.append(Block_large(path, 0.2, (255, 0, 0), 50, 3))
+            block = Block_large(path)  # create block_small with expected args only
+            block.color = block4_color
+            block.health = 5
+            block.speed = .5
+            block.size = block4_size  # if you can set size dynamically
+            blocks3.append(block)
             spawn_time_2 = current_time
+
         if current_time - spawn_time_3 > 3000:
-            blocks3.append(Block_small(path, 0.6, (0, 0, 255), 10, 1))
+            block = Block_small(path)  # create block_small with expected args only
+            block.color = block3_color
+            block.health = 1
+            block.speed = 1.5
+            block.size = block3_size  # if you can set size dynamically
+            blocks3.append(block)
             spawn_time_3 = current_time
+
         if current_time - spawn_time_4 > 20000:
-            blocks2.append(Block2(path, 0.8, (0, 100, 26), 30, 2))
+            block = Block2(path)  # create block_small with expected args only
+            block.color = block_color
+            block.health = 3
+            block.speed = 1
+            block.size = block_size  # if you can set size dynamically
+            blocks2.append(block)
             spawn_time_4 = current_time
 
         # === ENEMY MOVEMENT ===
         for group, health_loss in zip([blocks, blocks2, blocks3, blocks4], [2, 3, 1, 5]):
             for block in group[:]:
                 reached = block.move()
-                block.render()
+                block.render(screen)
                 if not block.alive:
                     group.remove(block)
                     if reached:
